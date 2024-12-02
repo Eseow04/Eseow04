@@ -1,0 +1,78 @@
+import matplotlib.pyplot as plt #importing matplotlib under the name plt
+import pandas as pd
+import numpy as np
+
+path = "https://cf-courses-data.s3.us.cloud-object-storage.appdomain.cloud/IBMDeveloperSkillsNetwork-ML0101EN-SkillsNetwork/labs/Module%202/data/FuelConsumptionCo2.csv"
+
+df = pd.read_csv(path) #using pandas to open the dataset. Df = dataframe
+
+print(df.head()) #prints the first 5 rows
+print(df.describe()) #prints minimum and maximum values
+
+cdf = df[['ENGINESIZE', 'CYLINDERS', 'FUELCONSUMPTION_COMB', 'CO2EMISSIONS']]
+
+viz = cdf[["ENGINESIZE", "CYLINDERS", "FUELCONSUMPTION_COMB", "CO2EMISSIONS"]]
+viz.hist() #visualises data in histogram
+plt.show() #displays the plots we are creating (i.e the histograms)
+plt.scatter(cdf.FUELCONSUMPTION_COMB, cdf.CO2EMISSIONS, color="blue") #scatter plot x = fuelcomp y = co2
+plt.xlabel("FUELCONSUMPTION_COMB")
+plt.ylabel("CO2EMISSIONS")
+plt.show()
+
+plt.scatter(cdf.ENGINESIZE, cdf.CO2EMISSIONS, color="blue") #scatter plot x = fuelcomp y = co2
+plt.xlabel("ENGINESIZE")
+plt.ylabel("CO2EMISSIONS")
+plt.show()
+
+plt.scatter(cdf.CYLINDERS, cdf.CO2EMISSIONS, color="blue") #scatter plot x = fuelcomp y = co2
+plt.xlabel("CYLINDERS")
+plt.ylabel("CO2EMISSIONS")
+plt.show()
+
+#splitting into txt and training sets
+msk = np.random.rand(len(df)) < 0.8 #generates random number between 0 and 1. Numbers below 0.8 are selected
+
+train = cdf[msk]
+test = cdf[~msk]
+
+plt.scatter(train.ENGINESIZE, train.CO2EMISSIONS, color='blue')
+plt.xlabel("Engine size")
+plt.ylabel("Emissions")
+plt.show()
+
+from sklearn import linear_model
+
+regr = linear_model.LinearRegression()
+train_x = np.asanyarray(train[['ENGINESIZE']]) 
+train_y = np.asanyarray(train[['CO2EMISSIONS']]) #assign 2 vars to train. Convert columns into numpy arrays
+regr.fit(train_x,train_y) #train linear regression models using engine size and co2 emi
+
+print('Coefficient:', regr.coef_)
+print('intercept:', regr.intercept_)
+
+plt.scatter(train.ENGINESIZE, train.CO2EMISSIONS, color='blue')
+plt.plot(train_x,regr.coef_[0][0]*train_x+regr.intercept_[0], "-r") #represents predicted C02 emmisions
+plt.xlabel('Engine Size')
+plt.ylabel('Emissions')
+plt.show()
+
+from sklearn.metrics import r2_score
+
+test_x = np.asanyarray(test[['ENGINESIZE']]) 
+test_y = np.asanyarray(test[['CO2EMISSIONS']]) #actual values 
+test_y_ = regr.predict(test_x) #modelled predictions
+
+print("mean absolute error: %.2f" % np.mean(np.absolute(test_y_-test_y))) #gives the mean of the absolute values of the errors. Tells to format the numbers as a floating
+print("Residual sum of squares: %.2f" % np.mean(test_y_-test_y)**2)
+print("R2-score: %.2f" % r2_score(test_y_,test_y))
+
+def predict_co2(engine_size):
+    engine_size_array = np.array([engine_size])
+    predicted_co2 = regr.predict(engine_size_array)
+    return predicted_co2[0][0]
+
+input_engine_size = float(input('enter engine size:'))
+predicted_value = predict_co2(input_engine_size)
+print(f'predicted co2 emi for engine size {input_engine_size}: {predicted_value: .2f}')
+
+print('done')
